@@ -25,7 +25,9 @@
 
 #import "SAVideoRangeSlider.h"
 
-@interface SAVideoRangeSlider ()
+@interface SAVideoRangeSlider () {
+    CGFloat _leftPosition, _rightPosition;
+}
 
 @property (nonatomic, strong) AVAssetImageGenerator *imageGenerator;
 @property (nonatomic, strong) UIView *bgView;
@@ -37,6 +39,9 @@
 @property (nonatomic) Float64 durationSeconds;
 @property (nonatomic, strong) SAResizibleBubble *popoverBubble;
 
+@property (nonatomic, strong) AVAsset *avAsset;
+
+
 @end
 
 @implementation SAVideoRangeSlider
@@ -46,7 +51,7 @@
 #define BG_VIEW_BORDERS_SIZE 3.0f
 
 
-- (id)initWithFrame:(CGRect)frame videoUrl:(NSURL *)videoUrl{
+- (id)initWithFrame:(CGRect)frame videoUrl:(NSURL *)videoUrl avAsset:(AVAsset*) asset{
     
     self = [super initWithFrame:frame];
     if (self) {
@@ -59,7 +64,8 @@
         _bgView.layer.borderColor = [UIColor grayColor].CGColor;
         _bgView.layer.borderWidth = BG_VIEW_BORDERS_SIZE;
         [self addSubview:_bgView];
-        
+
+        _avAsset = asset;
         _videoUrl = videoUrl;
         
         
@@ -327,8 +333,13 @@
 #pragma mark - Video
 
 -(void)getMovieFrame{
+
+    // Try to use a cached asset before re-loading the asset which is expensive.
+    AVAsset *myAsset = _avAsset;
+    if (!myAsset) {
+        myAsset = [[AVURLAsset alloc] initWithURL:_videoUrl options:nil];
+    }
     
-    AVAsset *myAsset = [[AVURLAsset alloc] initWithURL:_videoUrl options:nil];
     self.imageGenerator = [AVAssetImageGenerator assetImageGeneratorWithAsset:myAsset];
     
     if ([self isRetina]){
@@ -489,11 +500,18 @@
 
 #pragma mark - Properties
 
+-(void) setLeftPosition:(CGFloat)leftPosition {
+    _leftPosition = leftPosition/(_durationSeconds/_frame_width);
+}
+
 - (CGFloat)leftPosition
 {
     return _leftPosition * _durationSeconds / _frame_width;
 }
 
+-(void) setRightPosition:(CGFloat)rightPosition {
+    _rightPosition = rightPosition/(_durationSeconds/_frame_width);
+}
 
 - (CGFloat)rightPosition
 {
